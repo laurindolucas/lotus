@@ -46,14 +46,14 @@ export default function Onboarding() {
 
   const handleNext = () => {
     if (isLastSlide) {
-      navigate("/auth");
+      navigate("/dashboard");
     } else {
       setCurrentSlide(currentSlide + 1);
     }
   };
 
   const handleSkip = () => {
-    navigate("/auth");
+    navigate("/dashboard");
   };
 
   return (

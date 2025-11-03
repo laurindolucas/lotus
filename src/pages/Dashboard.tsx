@@ -1,10 +1,11 @@
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
-import { CrisisButton } from "@/components/Layout/CrisisButton";
+import { WeekCalendar } from "@/components/Dashboard/WeekCalendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Heart, Pill, TrendingUp, Users, FileText, ArrowRight, Smile, Meh, Frown } from "lucide-react";
+import { Calendar, Heart, Pill, Users, FileText, ArrowRight, AlertCircle, FileBarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -18,33 +19,53 @@ export default function Dashboard() {
   const quickActions = [
     { label: "Registrar Sintomas", icon: Heart, path: "/symptoms", gradient: "from-secondary to-secondary-dark" },
     { label: "Ver Calendário", icon: Calendar, path: "/calendar", gradient: "from-primary to-primary-glow" },
-    { label: "Medicamentos", icon: Pill, path: "/medications", gradient: "from-accent to-accent-soft" },
     { label: "Profissionais", icon: Users, path: "/professionals", gradient: "from-primary-light to-primary" },
+    { label: "Medicamentos", icon: Pill, path: "/medications", gradient: "from-accent to-accent-soft" },
+    { label: "Modo Crise", icon: AlertCircle, path: "/crisis", gradient: "from-crisis to-destructive" },
+    { label: "Obter Relatório", icon: FileBarChart, path: "/reports", gradient: "from-accent to-accent-soft" },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-calm pb-24">
-      <Header title="Olá, Maria! 👋" showNotifications showSettings />
+      <Header title="Lotus" showNotifications showSettings />
       
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
-        {/* Mood Check */}
+        {/* Greeting */}
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground">Olá, Maria</h2>
+        </div>
+
+        {/* Week Calendar */}
         <Card className="shadow-soft border-border">
+          <CardContent className="pt-6">
+            <WeekCalendar onDateClick={(date) => navigate("/calendar")} />
+          </CardContent>
+        </Card>
+
+        {/* Alerts */}
+        <Alert className="border-primary/20 bg-primary/5">
+          <AlertCircle className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-sm">
+            Seu próximo ciclo está previsto para daqui a 7 dias.
+          </AlertDescription>
+        </Alert>
+
+        {/* Tips Section */}
+        <Card className="shadow-soft border-border bg-gradient-secondary">
           <CardHeader>
-            <CardTitle className="text-lg">Como você está se sentindo hoje?</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileText className="w-5 h-5 text-secondary-dark" />
+              Dica do Dia
+            </CardTitle>
           </CardHeader>
-          <CardContent className="flex gap-4 justify-around">
-            <button className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-accent-soft transition-colors">
-              <Smile className="w-8 h-8 text-accent" />
-              <span className="text-xs text-muted-foreground">Bem</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-secondary transition-colors">
-              <Meh className="w-8 h-8 text-secondary-dark" />
-              <span className="text-xs text-muted-foreground">Normal</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-destructive/10 transition-colors">
-              <Frown className="w-8 h-8 text-destructive" />
-              <span className="text-xs text-muted-foreground">Ruim</span>
-            </button>
+          <CardContent>
+            <p className="text-sm text-secondary-foreground mb-3">
+              Manter um registro detalhado dos seus sintomas ajuda seu médico a criar um plano de tratamento mais eficaz para você.
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/articles")} className="text-secondary-foreground hover:text-secondary-foreground">
+              Ler mais artigos
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </CardContent>
         </Card>
 
@@ -76,8 +97,8 @@ export default function Dashboard() {
                   onClick={() => navigate(action.path)}
                   className={`p-4 rounded-xl bg-gradient-to-br ${action.gradient} text-white shadow-soft hover:shadow-medium transition-all hover:scale-[1.02]`}
                 >
-                  <Icon className="w-8 h-8 mb-2" />
-                  <p className="text-sm font-medium text-left">{action.label}</p>
+                  <Icon className="w-6 h-6 mb-2" />
+                  <p className="text-xs font-medium text-left">{action.label}</p>
                 </button>
               );
             })}
@@ -120,27 +141,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Tips Section */}
-        <Card className="shadow-soft border-border bg-gradient-secondary">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="w-5 h-5 text-secondary-dark" />
-              Dica do Dia
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-secondary-foreground mb-3">
-              Manter um registro detalhado dos seus sintomas ajuda seu médico a criar um plano de tratamento mais eficaz para você.
-            </p>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/articles")} className="text-secondary-foreground hover:text-secondary-foreground">
-              Ler mais artigos
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
-          </CardContent>
-        </Card>
       </main>
 
-      <CrisisButton />
       <BottomNav />
     </div>
   );

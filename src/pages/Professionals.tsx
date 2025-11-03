@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
-import { CrisisButton } from "@/components/Layout/CrisisButton";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,7 @@ const professionals = [
 ];
 
 export default function Professionals() {
+  const navigate = useNavigate();
   const [selectedSpecialty, setSelectedSpecialty] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [favorites, setFavorites] = useState<number[]>([1, 3]);
@@ -165,13 +166,17 @@ export default function Professionals() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Phone className="w-4 h-4 mr-2" />
-                    Ligar
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/professional-booking", { state: { professional: prof } })}
+                  >
+                    Agendar Consulta
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email
+                    <Phone className="w-4 h-4 mr-2" />
+                    Contato
                   </Button>
                 </div>
               </CardContent>
@@ -190,7 +195,6 @@ export default function Professionals() {
         )}
       </main>
 
-      <CrisisButton />
       <BottomNav />
     </div>
   );

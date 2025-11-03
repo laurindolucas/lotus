@@ -30,9 +30,15 @@ export default function Auth() {
       return;
     }
 
-    // Simulação de autenticação
+    // Após login, ir para dashboard. Após cadastro, mostrar onboarding
     toast.success(isLogin ? "Bem-vinda de volta!" : "Conta criada com sucesso!");
-    setTimeout(() => navigate("/dashboard"), 500);
+    setTimeout(() => {
+      if (isLogin) {
+        navigate("/dashboard");
+      } else {
+        navigate("/onboarding");
+      }
+    }, 500);
   };
 
   return (

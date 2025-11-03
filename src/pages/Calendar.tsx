@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
-import { CrisisButton } from "@/components/Layout/CrisisButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Circle, Heart, Droplet } from "lucide-react";
@@ -166,7 +165,6 @@ export default function Calendar() {
         </div>
       </main>
 
-      <CrisisButton />
       <BottomNav />
     </div>
   );

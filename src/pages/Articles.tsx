@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
-import { CrisisButton } from "@/components/Layout/CrisisButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -223,7 +222,6 @@ export default function Articles() {
         )}
       </main>
 
-      <CrisisButton />
       <BottomNav />
     </div>
   );

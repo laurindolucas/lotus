@@ -10,12 +10,15 @@ import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import Symptoms from "./pages/Symptoms";
 import Professionals from "./pages/Professionals";
+import ProfessionalBooking from "./pages/ProfessionalBooking";
+import Appointments from "./pages/Appointments";
 import Articles from "./pages/Articles";
 import Crisis from "./pages/Crisis";
 import Medications from "./pages/Medications";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,12 +37,15 @@ const App = () => (
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/symptoms" element={<Symptoms />} />
           <Route path="/professionals" element={<Professionals />} />
+          <Route path="/professional-booking" element={<ProfessionalBooking />} />
+          <Route path="/appointments" element={<Appointments />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/medications" element={<Medications />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

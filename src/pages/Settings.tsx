@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { User, Bell, Shield, Heart, Users, LogOut, ChevronRight } from "lucide-react";
-import { useState } from "react";
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState({
     medications: true,
     cycle: true,
@@ -25,7 +27,10 @@ export default function Settings() {
         {/* Profile Section */}
         <Card className="shadow-soft border-border">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4 mb-4">
+            <div 
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-4 mb-4 cursor-pointer hover:bg-muted rounded-lg p-2 -m-2 transition-colors"
+            >
               <div className="w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center">
                 <User className="w-8 h-8 text-white" />
               </div>
@@ -33,11 +38,9 @@ export default function Settings() {
                 <h3 className="font-semibold text-foreground text-lg">Maria Silva</h3>
                 <p className="text-sm text-muted-foreground">maria.silva@exemplo.com</p>
               </div>
-              <Button variant="ghost" size="icon">
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </div>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={() => navigate("/profile")}>
               Editar Perfil
             </Button>
           </CardContent>

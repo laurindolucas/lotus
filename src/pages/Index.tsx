@@ -8,9 +8,9 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redireciona automaticamente após 1 segundo para dar tempo de ver o logo
+    // Redireciona automaticamente para o login após 1 segundo
     const timer = setTimeout(() => {
-      navigate("/onboarding");
+      navigate("/auth");
     }, 1000);
 
     return () => clearTimeout(timer);

@@ -1,16 +1,68 @@
+import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
-import { CrisisButton } from "@/components/Layout/CrisisButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Share2, TrendingUp, TrendingDown, Calendar, Heart, Pill } from "lucide-react";
+import { Download, Share2, TrendingUp, TrendingDown, Calendar, Heart, Pill, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Reports() {
+  const [selectedPeriod, setSelectedPeriod] = useState("1");
+
+  const handleDownloadReport = () => {
+    toast.success(`Relatório dos últimos ${selectedPeriod === "1" ? "1 mês" : selectedPeriod === "3" ? "3 meses" : "6 meses"} baixado com sucesso!`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-calm pb-24">
-      <Header title="Relatório Pessoal" showBack showNotifications />
+      <Header title="Obter Relatório" showBack showNotifications />
       
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
+        {/* Export Section */}
+        <Card className="shadow-soft border-border">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Gerar Relatório
+            </CardTitle>
+            <CardDescription>
+              Selecione o período e baixe um relatório completo dos seus dados
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                variant={selectedPeriod === "1" ? "default" : "outline"}
+                onClick={() => setSelectedPeriod("1")}
+                className="h-20 flex flex-col items-center justify-center"
+              >
+                <span className="text-2xl font-bold">1</span>
+                <span className="text-xs">mês</span>
+              </Button>
+              <Button
+                variant={selectedPeriod === "3" ? "default" : "outline"}
+                onClick={() => setSelectedPeriod("3")}
+                className="h-20 flex flex-col items-center justify-center"
+              >
+                <span className="text-2xl font-bold">3</span>
+                <span className="text-xs">meses</span>
+              </Button>
+              <Button
+                variant={selectedPeriod === "6" ? "default" : "outline"}
+                onClick={() => setSelectedPeriod("6")}
+                className="h-20 flex flex-col items-center justify-center"
+              >
+                <span className="text-2xl font-bold">6</span>
+                <span className="text-xs">meses</span>
+              </Button>
+            </div>
+            
+            <Button onClick={handleDownloadReport} className="w-full">
+              <Download className="w-4 h-4 mr-2" />
+              Baixar Relatório
+            </Button>
+          </CardContent>
+        </Card>
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           <Card className="shadow-soft border-border">
@@ -156,7 +208,6 @@ export default function Reports() {
         </div>
       </main>
 
-      <CrisisButton />
       <BottomNav />
     </div>
   );

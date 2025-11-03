@@ -6,7 +6,7 @@ const navItems = [
   { icon: Home, label: "Início", path: "/dashboard" },
   { icon: Calendar, label: "Ciclo", path: "/calendar" },
   { icon: Heart, label: "Sintomas", path: "/symptoms" },
-  { icon: Users, label: "Profissionais", path: "/professionals" },
+  { icon: Users, label: "Consultas", path: "/appointments" },
   { icon: FileText, label: "Artigos", path: "/articles" },
 ];
 
