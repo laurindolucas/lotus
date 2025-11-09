@@ -50,6 +50,18 @@ export default function Calendar() {
       <Header title="Calendário Menstrual" showBack showNotifications />
       
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+            <Droplet className="w-5 h-5" />
+            <span className="text-xs">Marcar Menstruação</span>
+          </Button>
+          <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+            <Heart className="w-5 h-5" />
+            <span className="text-xs">Registrar Sintomas</span>
+          </Button>
+        </div>
+       
         {/* Calendar Card */}
         <Card className="shadow-medium border-border">
           <CardHeader>
@@ -152,17 +164,7 @@ export default function Calendar() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" className="h-auto py-4 flex-col gap-2">
-            <Droplet className="w-5 h-5" />
-            <span className="text-xs">Marcar Menstruação</span>
-          </Button>
-          <Button variant="outline" className="h-auto py-4 flex-col gap-2">
-            <Heart className="w-5 h-5" />
-            <span className="text-xs">Registrar Sintomas</span>
-          </Button>
-        </div>
+       
       </main>
 
       <BottomNav />

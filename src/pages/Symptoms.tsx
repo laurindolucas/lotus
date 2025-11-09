@@ -134,6 +134,15 @@ export default function Symptoms() {
             />
           </CardContent>
         </Card>
+        {/* Save Button */}
+        <Button
+          onClick={handleSave}
+          size="lg"
+          className="w-full"
+          disabled={selectedSymptoms.length === 0}
+        >
+          Salvar Registro
+        </Button>
 
         {/* Recent History */}
         <Card className="shadow-soft border-border">
@@ -162,15 +171,7 @@ export default function Symptoms() {
           </CardContent>
         </Card>
 
-        {/* Save Button */}
-        <Button
-          onClick={handleSave}
-          size="lg"
-          className="w-full"
-          disabled={selectedSymptoms.length === 0}
-        >
-          Salvar Registro
-        </Button>
+        
       </main>
 
       <BottomNav />
