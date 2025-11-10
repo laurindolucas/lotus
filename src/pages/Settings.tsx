@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
@@ -6,18 +6,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { User, Bell, Shield, Heart, Users, LogOut, ChevronRight } from "lucide-react";
+import { User, Bell, Shield, Heart, Users, LogOut, ChevronRight, Lock, FileText, Scale } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { signOut, user } = useAuth();
   const [notifications, setNotifications] = useState({
     medications: true,
     cycle: true,
     symptoms: false,
     articles: true,
   });
-
   const [companionMode, setCompanionMode] = useState(false);
+  const [userData, setUserData] = useState({ name: "", email: "" });
+
+  useEffect(() => {
+    loadProfile();
+  }, [user]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, email')
+      .eq('id', user.id)
+      .maybeSingle();
+    
+    if (profile) {
+      setUserData({
+        name: profile.name || "",
+        email: profile.email || "",
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Erro ao sair da conta");
+    } else {
+      toast.success("Você saiu da conta");
+      navigate("/auth");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-calm pb-24">
@@ -35,8 +69,12 @@ export default function Settings() {
                 <User className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground text-lg">Maria Silva</h3>
-                <p className="text-sm text-muted-foreground">maria.silva@exemplo.com</p>
+                <h3 className="font-semibold text-foreground text-lg">
+                  {userData.name || "Usuário"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {userData.email || "email@exemplo.com"}
+                </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </div>
@@ -147,16 +185,26 @@ export default function Settings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button variant="ghost" className="w-full justify-between h-auto py-3">
-              <span className="text-sm font-medium">Alterar Senha</span>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-between h-auto py-3"
+              onClick={() => navigate("/change-password")}
+            >
+              <span className="text-sm font-medium flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Alterar Senha
+              </span>
               <ChevronRight className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" className="w-full justify-between h-auto py-3">
-              <span className="text-sm font-medium">Dados e Privacidade</span>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" className="w-full justify-between h-auto py-3">
-              <span className="text-sm font-medium">Exportar Meus Dados</span>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-between h-auto py-3"
+              onClick={() => navigate("/privacy-policy")}
+            >
+              <span className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Política de Privacidade
+              </span>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </CardContent>
@@ -171,16 +219,15 @@ export default function Settings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button variant="ghost" className="w-full justify-between h-auto py-3">
-              <span className="text-sm font-medium">Termos de Uso</span>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" className="w-full justify-between h-auto py-3">
-              <span className="text-sm font-medium">Política de Privacidade</span>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" className="w-full justify-between h-auto py-3">
-              <span className="text-sm font-medium">Ajuda e Suporte</span>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-between h-auto py-3"
+              onClick={() => navigate("/terms-of-service")}
+            >
+              <span className="text-sm font-medium flex items-center gap-2">
+                <Scale className="w-4 h-4" />
+                Termos de Uso
+              </span>
               <ChevronRight className="w-4 h-4" />
             </Button>
             <div className="pt-2">
@@ -190,7 +237,11 @@ export default function Settings() {
         </Card>
 
         {/* Logout */}
-        <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10 border-destructive">
+        <Button 
+          variant="outline" 
+          className="w-full text-destructive hover:bg-destructive/10 border-destructive"
+          onClick={handleLogout}
+        >
           <LogOut className="w-4 h-4 mr-2" />
           Sair da Conta
         </Button>

@@ -1,84 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Phone, Mail, Heart, Star } from "lucide-react";
+import { Search, MapPin, Star, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
+import { ProfessionalDetailModal } from "@/components/Professional/ProfessionalDetailModal";
+import { BookingModal } from "@/components/Professional/BookingModal";
 
-const specialties = ["Todos", "Ginecologista", "Nutricionista", "Fisioterapeuta", "Psicólogo"];
-
-const professionals = [
-  {
-    id: 1,
-    name: "Dra. Ana Silva",
-    specialty: "Ginecologista",
-    location: "São Paulo, SP",
-    rating: 4.9,
-    phone: "(11) 98765-4321",
-    email: "ana.silva@exemplo.com",
-    experience: "15 anos de experiência em endometriose",
-    isFavorite: true,
-  },
-  {
-    id: 2,
-    name: "Dra. Mariana Costa",
-    specialty: "Nutricionista",
-    location: "São Paulo, SP",
-    rating: 4.8,
-    phone: "(11) 98765-1234",
-    email: "mariana.costa@exemplo.com",
-    experience: "Especialista em dieta anti-inflamatória",
-    isFavorite: false,
-  },
-  {
-    id: 3,
-    name: "Dr. Pedro Santos",
-    specialty: "Fisioterapeuta",
-    location: "Rio de Janeiro, RJ",
-    rating: 4.7,
-    phone: "(21) 98765-5678",
-    email: "pedro.santos@exemplo.com",
-    experience: "Tratamento de dor pélvica crônica",
-    isFavorite: true,
-  },
-  {
-    id: 4,
-    name: "Dra. Julia Mendes",
-    specialty: "Psicólogo",
-    location: "Belo Horizonte, MG",
-    rating: 4.9,
-    phone: "(31) 98765-9012",
-    email: "julia.mendes@exemplo.com",
-    experience: "Apoio psicológico em doenças crônicas",
-    isFavorite: false,
-  },
-  {
-    id: 5,
-    name: "Dra. Carolina Oliveira",
-    specialty: "Ginecologista",
-    location: "Curitiba, PR",
-    rating: 4.8,
-    phone: "(41) 98765-3456",
-    email: "carolina.oliveira@exemplo.com",
-    experience: "Cirurgia minimamente invasiva",
-    isFavorite: false,
-  },
-];
+const specialties = ["Todos", "Ginecologista", "Nutricionista", "Fisioterapeuta", "Psicóloga"];
 
 export default function Professionals() {
-  const navigate = useNavigate();
   const [selectedSpecialty, setSelectedSpecialty] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
-  const [favorites, setFavorites] = useState<number[]>([1, 3]);
+  const [professionals, setProfessionals] = useState<any[]>([]);
+  const [selectedProfessional, setSelectedProfessional] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
-  const toggleFavorite = (id: number) => {
-    setFavorites(prev =>
-      prev.includes(id) ? prev.filter(fav => fav !== id) : [...prev, id]
-    );
+  useEffect(() => {
+    fetchProfessionals();
+  }, []);
+
+  const fetchProfessionals = async () => {
+    const { data, error } = await supabase
+      .from("professionals")
+      .select("*")
+      .order("name");
+
+    if (error) {
+      toast.error("Erro ao carregar profissionais");
+    } else {
+      setProfessionals(data || []);
+    }
   };
 
   const filteredProfessionals = professionals.filter(prof => {
@@ -88,12 +46,21 @@ export default function Professionals() {
     return matchesSpecialty && matchesSearch;
   });
 
+  const handleContactClick = (prof: any) => {
+    setSelectedProfessional(prof);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleScheduleClick = (prof: any) => {
+    setSelectedProfessional(prof);
+    setIsBookingModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-calm pb-24">
       <Header title="Rede de Profissionais" showBack showNotifications />
       
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
           <Input
@@ -105,7 +72,6 @@ export default function Professionals() {
           />
         </div>
 
-        {/* Specialty Filters */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {specialties.map((specialty) => (
             <button
@@ -123,7 +89,6 @@ export default function Professionals() {
           ))}
         </div>
 
-        {/* Professionals List */}
         <div className="space-y-4">
           {filteredProfessionals.map((prof) => (
             <Card key={prof.id} className="shadow-soft border-border hover:shadow-medium transition-shadow">
@@ -136,33 +101,15 @@ export default function Professionals() {
                     <Badge variant="secondary" className="mb-2">
                       {prof.specialty}
                     </Badge>
-                    <p className="text-sm text-muted-foreground mb-2">{prof.experience}</p>
                     
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {prof.location}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-current text-accent" />
-                        {prof.rating}
-                      </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                      {prof.price && (
+                        <span className="font-medium text-primary">
+                          R$ {prof.price.toFixed(2).replace('.', ',')}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  
-                  <button
-                    onClick={() => toggleFavorite(prof.id)}
-                    className="p-2 rounded-full hover:bg-muted transition-colors"
-                  >
-                    <Heart
-                      className={cn(
-                        "w-5 h-5 transition-colors",
-                        favorites.includes(prof.id)
-                          ? "fill-destructive text-destructive"
-                          : "text-muted-foreground"
-                      )}
-                    />
-                  </button>
                 </div>
 
                 <div className="flex gap-2">
@@ -170,30 +117,41 @@ export default function Professionals() {
                     variant="default" 
                     size="sm" 
                     className="flex-1"
-                    onClick={() => navigate("/professional-booking", { state: { professional: prof } })}
+                    onClick={() => handleScheduleClick(prof)}
                   >
                     Agendar Consulta
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Phone className="w-4 h-4 mr-2" />
-                    Contato
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleContactClick(prof)}
+                  >
+                    Ver Detalhes
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-
-        {filteredProfessionals.length === 0 && (
-          <Card className="shadow-soft border-border">
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                Nenhum profissional encontrado com esses critérios.
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </main>
+
+      <ProfessionalDetailModal
+        professional={selectedProfessional}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        onSchedule={() => {
+          setIsDetailModalOpen(false);
+          setIsBookingModalOpen(true);
+        }}
+      />
+
+      <BookingModal
+        professional={selectedProfessional}
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        onSuccess={fetchProfessionals}
+      />
 
       <BottomNav />
     </div>

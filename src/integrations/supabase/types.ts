@@ -97,6 +97,75 @@ export type Database = {
         }
         Relationships: []
       }
+      medication_logs: {
+        Row: {
+          created_at: string
+          id: string
+          medication_id: string
+          scheduled_time: string
+          skipped: boolean
+          taken_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medication_id: string
+          scheduled_time: string
+          skipped?: boolean
+          taken_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medication_id?: string
+          scheduled_time?: string
+          skipped?: boolean
+          taken_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      medications: {
+        Row: {
+          active: boolean
+          created_at: string
+          dosage: string
+          frequency_hours: number
+          id: string
+          name: string
+          notes: string | null
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          dosage: string
+          frequency_hours: number
+          id?: string
+          name: string
+          notes?: string | null
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          dosage?: string
+          frequency_hours?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       menstruation_cycles: {
         Row: {
           created_at: string
@@ -120,6 +189,36 @@ export type Database = {
           flow_intensity?: string | null
           id?: string
           notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
           user_id?: string
         }
         Relationships: []
@@ -162,6 +261,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           birth_date: string | null
           created_at: string
           email: string
@@ -170,6 +270,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
           email: string
@@ -178,6 +279,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
           email?: string

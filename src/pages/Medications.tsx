@@ -1,170 +1,112 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, Pill, MoreVertical, Bell } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const medications = [
-  {
-    id: 1,
-    name: "Ibuprofeno",
-    dosage: "600mg",
-    frequency: "A cada 8 horas",
-    times: ["08:00", "16:00", "00:00"],
-    color: "bg-destructive",
-    lastTaken: "Hoje às 14:30",
-    active: true,
-  },
-  {
-    id: 2,
-    name: "Anticoncepcional",
-    dosage: "1 comprimido",
-    frequency: "Diariamente",
-    times: ["22:00"],
-    color: "bg-primary",
-    lastTaken: "Ontem às 22:00",
-    active: true,
-  },
-  {
-    id: 3,
-    name: "Vitamina D",
-    dosage: "2000 UI",
-    frequency: "Diariamente",
-    times: ["08:00"],
-    color: "bg-accent",
-    lastTaken: "Hoje às 08:15",
-    active: true,
-  },
-];
-
-const upcomingDoses = [
-  { medication: "Ibuprofeno", time: "16:00", inMinutes: 45 },
-  { medication: "Anticoncepcional", time: "22:00", inMinutes: 390 },
-];
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Pill, Clock, Trash2, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hooks/useAuth";
+import { format, addHours, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 
 export default function Medications() {
+  const { user } = useAuth();
+  const [medications, setMedications] = useState<any[]>([]);
+  const [upcomingDoses, setUpcomingDoses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    dosage: "",
+    frequencyHours: "8",
+    startTime: "08:00",
+    notes: "",
+  });
+
+  useEffect(() => {
+    if (user) fetchMedications();
+  }, [user]);
+
+  const fetchMedications = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("medications").select("*").eq("user_id", user.id).eq("active", true);
+    setMedications(data || []);
+    calculateUpcomingDoses(data || []);
+    setLoading(false);
+  };
+
+  const calculateUpcomingDoses = (meds: any[]) => {
+    const now = new Date();
+    const doses: any[] = [];
+    meds.forEach((med) => {
+      const [hours, minutes] = med.start_time.split(":").map(Number);
+      let currentTime = new Date(startOfDay(now));
+      currentTime.setHours(hours, minutes, 0, 0);
+      while (isBefore(currentTime, endOfDay(now))) {
+        if (isAfter(currentTime, now)) {
+          doses.push({ medicationId: med.id, medicationName: med.name, dosage: med.dosage, scheduledTime: currentTime });
+        }
+        currentTime = addHours(currentTime, med.frequency_hours);
+      }
+    });
+    setUpcomingDoses(doses.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime()).slice(0, 6));
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.dosage || !user) return;
+    const { error } = await supabase.from("medications").insert({
+      user_id: user.id, name: formData.name, dosage: formData.dosage,
+      frequency_hours: parseInt(formData.frequencyHours), start_time: formData.startTime,
+      notes: formData.notes, active: true
+    });
+    if (error) toast.error("Erro ao adicionar"); else { toast.success("Medicamento adicionado!"); setIsModalOpen(false); fetchMedications(); }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-calm pb-24">
       <Header title="Medicamentos" showBack showNotifications />
-      
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
-        {/* Upcoming Doses */}
-        <Card className="shadow-medium border-border bg-gradient-secondary">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-secondary-foreground">
-              <Bell className="w-5 h-5" />
-              Próximas Doses
-            </CardTitle>
-          </CardHeader>
+      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+        <Button onClick={() => setIsModalOpen(true)} size="lg" className="w-full"><Plus className="w-5 h-5 mr-2" />Adicionar Medicamento</Button>
+        
+        <Card className="shadow-soft border-border">
+          <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-primary" />Próximas Doses</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            {upcomingDoses.map((dose, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 rounded-lg bg-white/50"
-              >
-                <div>
-                  <p className="font-semibold text-secondary-foreground">{dose.medication}</p>
-                  <p className="text-sm text-secondary-foreground/70">Horário: {dose.time}</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  Em {dose.inMinutes} min
-                </Badge>
+            {upcomingDoses.map((dose, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div><p className="font-medium text-sm">{dose.medicationName}</p><p className="text-xs text-primary">{format(dose.scheduledTime, "HH:mm")}</p></div>
+                <Button size="sm" variant="ghost"><CheckCircle2 className="w-5 h-5 text-primary" /></Button>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        {/* Active Medications */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              Medicamentos Ativos ({medications.filter(m => m.active).length})
-            </h2>
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {medications.filter(m => m.active).map((med) => (
-              <Card key={med.id} className="shadow-soft border-border">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", med.color)}>
-                        <Pill className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground mb-1">{med.name}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {med.dosage} • {med.frequency}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          Última dose: {med.lastTaken}
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Horários:</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {med.times.map((time, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {time}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button variant="outline" size="sm" className="w-full mt-4">
-                    Marcar como Tomado
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Medication History */}
         <Card className="shadow-soft border-border">
-          <CardHeader>
-            <CardTitle className="text-lg">Histórico Recente</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Pill className="w-5 h-5" />Medicamentos Ativos</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted">
-              <div className="w-2 h-2 rounded-full bg-accent mt-2" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">Vitamina D tomada</p>
-                <p className="text-xs text-muted-foreground">Hoje às 08:15 • Dosagem: 2000 UI</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted">
-              <div className="w-2 h-2 rounded-full bg-destructive mt-2" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">Ibuprofeno tomado</p>
-                <p className="text-xs text-muted-foreground">Hoje às 14:30 • Dosagem: 600mg</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted">
-              <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">Anticoncepcional tomado</p>
-                <p className="text-xs text-muted-foreground">Ontem às 22:00 • Dosagem: 1 comprimido</p>
-              </div>
-            </div>
+            {medications.map((med) => (
+              <div key={med.id} className="p-3 bg-muted rounded-lg"><h4 className="font-semibold text-sm">{med.name}</h4><p className="text-xs">{med.dosage} - A cada {med.frequency_hours}h</p></div>
+            ))}
           </CardContent>
         </Card>
       </main>
 
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent><DialogHeader><DialogTitle>Adicionar Medicamento</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div><Label>Nome</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
+            <div><Label>Dosagem</Label><Input value={formData.dosage} onChange={(e) => setFormData({ ...formData, dosage: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Frequência (horas)</Label><Input type="number" value={formData.frequencyHours} onChange={(e) => setFormData({ ...formData, frequencyHours: e.target.value })} /></div>
+              <div><Label>Primeira Dose</Label><Input type="time" value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} /></div>
+            </div>
+            <Button onClick={handleSubmit} className="w-full">Salvar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <BottomNav />
     </div>
   );

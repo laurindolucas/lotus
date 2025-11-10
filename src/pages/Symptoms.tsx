@@ -66,6 +66,30 @@ export default function Symptoms() {
     );
   };
 
+  const [customSymptom, setCustomSymptom] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [symptomIntensities, setSymptomIntensities] = useState<Record<string, number>>({});
+  const [currentSymptom, setCurrentSymptom] = useState<string | null>(null);
+
+  const handleSymptomClick = (symptom: string) => {
+    if (selectedSymptoms.includes(symptom)) {
+      // Remove symptom
+      setSelectedSymptoms(prev => prev.filter(s => s !== symptom));
+      const newIntensities = { ...symptomIntensities };
+      delete newIntensities[symptom];
+      setSymptomIntensities(newIntensities);
+    } else {
+      // Add symptom and set as current to define intensity
+      setCurrentSymptom(symptom);
+    }
+  };
+
+  const confirmSymptomIntensity = (symptom: string, intensity: number) => {
+    setSelectedSymptoms(prev => [...prev, symptom]);
+    setSymptomIntensities(prev => ({ ...prev, [symptom]: intensity }));
+    setCurrentSymptom(null);
+  };
+
   const handleSave = async () => {
     if (selectedSymptoms.length === 0) {
       toast.error("Selecione pelo menos um sintoma");
@@ -83,7 +107,7 @@ export default function Symptoms() {
       const symptomsToInsert = selectedSymptoms.map(symptom => ({
         user_id: user.id,
         symptom_name: symptom,
-        intensity,
+        intensity: symptomIntensities[symptom] || 5,
         notes,
         date: new Date().toISOString().split('T')[0],
       }));
@@ -96,8 +120,12 @@ export default function Symptoms() {
 
       toast.success("Sintomas registrados com sucesso!");
       setSelectedSymptoms([]);
+      setSymptomIntensities({});
       setIntensity(5);
       setNotes("");
+      setCurrentSymptom(null);
+      setCustomSymptom("");
+      setShowCustomInput(false);
       fetchRecentSymptoms();
     } catch (error) {
       console.error("Error saving symptoms:", error);
@@ -116,67 +144,137 @@ export default function Symptoms() {
         <Card className="shadow-soft border-border">
           <CardHeader>
             <CardTitle>Selecione seus sintomas</CardTitle>
-            <CardDescription>Toque nos sintomas que você está sentindo agora</CardDescription>
+            <CardDescription>Cada sintoma terá sua própria intensidade</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {commonSymptoms.map((symptom) => {
-                const isSelected = selectedSymptoms.includes(symptom);
-                return (
-                  <button
-                    key={symptom}
-                    onClick={() => toggleSymptom(symptom)}
-                    className={cn(
-                      "p-4 rounded-lg border-2 text-sm font-medium transition-all relative",
-                      isSelected
-                        ? "border-primary bg-primary-light/20 text-primary"
-                        : "border-border hover:border-primary/50 text-foreground"
-                    )}
+          <CardContent className="space-y-4">
+            {!showCustomInput ? (
+              <div className="grid grid-cols-2 gap-3">
+                {commonSymptoms.map((symptom) => {
+                  const isSelected = selectedSymptoms.includes(symptom);
+                  return (
+                    <button
+                      key={symptom}
+                      onClick={() => handleSymptomClick(symptom)}
+                      className={cn(
+                        "p-4 rounded-lg border-2 text-sm font-medium transition-all relative",
+                        isSelected
+                          ? "border-primary bg-primary-light/20 text-primary"
+                          : "border-border hover:border-primary/50 text-foreground"
+                      )}
+                    >
+                      {symptom}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                      {isSelected && (
+                        <div className="text-xs text-primary mt-1">
+                          Intensidade: {symptomIntensities[symptom]}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setShowCustomInput(true)}
+                  className="p-4 rounded-lg border-2 border-dashed border-border hover:border-primary/50 text-sm font-medium transition-all text-muted-foreground hover:text-foreground"
+                >
+                  + Outro sintoma
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="custom">Nome do sintoma</Label>
+                <Input
+                  id="custom"
+                  placeholder="Digite o nome do sintoma"
+                  value={customSymptom}
+                  onChange={(e) => setCustomSymptom(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowCustomInput(false);
+                      setCustomSymptom("");
+                    }}
                   >
-                    {symptom}
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      if (customSymptom.trim()) {
+                        setCurrentSymptom(customSymptom.trim());
+                        setShowCustomInput(false);
+                      }
+                    }}
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Intensity Modal */}
+            {currentSymptom && (
+              <Card className="border-primary bg-primary-light/10">
+                <CardContent className="pt-4 space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Defina a intensidade:</h3>
+                    <p className="text-sm text-muted-foreground">{currentSymptom}</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Leve</span>
+                      <span className="text-2xl font-bold text-primary">{intensity}</span>
+                      <span className="text-muted-foreground">Intenso</span>
+                    </div>
+                    <Slider
+                      value={[intensity]}
+                      onValueChange={(value) => setIntensity(value[0])}
+                      max={10}
+                      min={1}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setCurrentSymptom(null);
+                        setIntensity(5);
+                        setCustomSymptom("");
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        confirmSymptomIntensity(currentSymptom, intensity);
+                        setIntensity(5);
+                        setCustomSymptom("");
+                      }}
+                    >
+                      Confirmar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </CardContent>
         </Card>
 
-        {/* Intensity Slider */}
-        {selectedSymptoms.length > 0 && (
-          <Card className="shadow-soft border-border animate-scale-in">
-            <CardHeader>
-              <CardTitle>Intensidade do Desconforto</CardTitle>
-              <CardDescription>De 1 (leve) a 10 (muito intenso)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Leve</span>
-                  <span className="text-2xl font-bold text-primary">{intensity}</span>
-                  <span className="text-muted-foreground">Intenso</span>
-                </div>
-                <Slider
-                  value={[intensity]}
-                  onValueChange={(value) => setIntensity(value[0])}
-                  max={10}
-                  min={1}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                    <span key={num}>{num}</span>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Additional Notes */}
         <Card className="shadow-soft border-border">
