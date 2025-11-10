@@ -48,10 +48,10 @@ export default function Dashboard() {
   ];
 
   const quickActions = [
-    { label: "Registrar Sintomas", icon: Heart, path: "/symptoms", gradient: "from-secondary to-secondary-dark" },
-    { label: "Ver Calendário", icon: Calendar, path: "/calendar", gradient: "from-secondary to-secondary-dark" },
-    { label: "Profissionais", icon: Users, path: "/professionals", gradient: "from-primary-light to-primary" },
-    { label: "Medicamentos", icon: Pill, path: "/medications", gradient: "from-primary-light to-primary" },
+    { label: "Registrar Sintomas", icon: Heart, path: "/symptoms", gradient:  "from-primary-light to-primary"},
+    { label: "Ver Calendário", icon: Calendar, path: "/calendar", gradient:  "from-primary-light to-primary"},
+    { label: "Profissionais", icon: Users, path: "/professionals", gradient: "from-secondary to-secondary-dark" },
+    { label: "Medicamentos", icon: Pill, path: "/medications", gradient: "from-secondary to-secondary-dark" },
     { label: "Modo Crise", icon: AlertCircle, path: "/crisis", gradient: "from-crisis to-destructive" },
     { label: "Obter Relatório", icon: FileBarChart, path: "/reports", gradient: "from-crisis to-destructive" },
   ];

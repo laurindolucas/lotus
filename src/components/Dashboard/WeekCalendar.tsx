@@ -25,7 +25,7 @@ export const WeekCalendar = ({ selectedDate = new Date(), onDateClick }: WeekCal
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-lg transition-all min-w-[44px]",
               isToday && !isSelected && "bg-primary/10 text-primary",
-              isSelected && "bg-primary text-primary-foreground shadow-soft",
+              isSelected && "bg-gradient-primary text-primary-foreground shadow-soft",
               !isToday && !isSelected && "hover:bg-muted"
             )}
           >

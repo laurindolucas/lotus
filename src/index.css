@@ -20,13 +20,13 @@ All colors MUST be HSL.
     --popover-foreground: 280 20% 20%;
 
     /* Primary: Soft purple (endometriosis awareness) */
-    --primary: 280 65% 65%;
+    --primary: 280 95% 65%;
     --primary-foreground: 0 0% 100%;
     --primary-light: 280 60% 85%;
     --primary-glow: 280 70% 75%;
 
     /* Secondary: Gentle pink (comfort & care) */
-    --secondary: 340 75% 85%;
+    --secondary: 340 85% 85%;
     --secondary-foreground: 340 50% 30%;
     --secondary-dark: 340 60% 70%;
 
