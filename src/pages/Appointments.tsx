@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, Plus } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -53,7 +53,7 @@ export default function Appointments() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('appointments')
         .select('*, professionals(name, specialty)')
         .eq('user_id', user.id)
@@ -63,7 +63,7 @@ export default function Appointments() {
       setAppointments(data || []);
     } catch (error) {
       console.error('Error loading appointments:', error);
-      toast.error('Erro ao carregar consultas');
+      toast.error('Erro ao carregar encontros');
     } finally {
       setLoading(false);
     }
@@ -73,40 +73,65 @@ export default function Appointments() {
     if (!cancelDialog.id) return;
     
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('appointments')
         .update({ status: 'cancelada' })
         .eq('id', cancelDialog.id);
 
       if (error) throw error;
       
-      toast.success('Consulta cancelada');
+      toast.success('Encontro cancelado');
       loadAppointments();
     } catch (error) {
       console.error('Error canceling appointment:', error);
-      toast.error('Erro ao cancelar consulta');
+      toast.error('Erro ao cancelar encontro');
     } finally {
       setCancelDialog({ open: false, id: null });
     }
   };
 
+  const handleComplete = async (id: string) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('appointments')
+        .update({ status: 'concluída' })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success('Encontro marcado como concluído');
+      loadAppointments();
+    } catch (error) {
+      console.error('Error completing appointment:', error);
+      toast.error('Erro ao concluir encontro');
+    }
+  };
+
+  const handleReschedule = (id: string) => {
+    // Navegar para a página de profissionais para reagendar
+    navigate('/professionals');
+    toast.info('Selecione um novo horário');
+  };
+
   const upcomingAppointments = appointments.filter(a => a.status === 'agendada');
-  const pastAppointments = appointments.filter(a => ['concluída', 'cancelada'].includes(a.status));
+  const pastAppointments = appointments.filter(a => a.status === 'concluída');
+  const canceledAppointments = appointments.filter(a => a.status === 'cancelada');
 
   return (
     <div className="min-h-screen bg-gradient-calm pb-24">
-      <Header title="Minhas Consultas" showBack showNotifications />
+      <Header title="Meus Encontros" showBack showNotifications />
       
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
         <Button onClick={() => navigate("/professionals")} className="w-full">
           <Plus className="w-4 h-4 mr-2" />
-          Agendar Nova Consulta
+          Agendar Novo Encontro
         </Button>
 
         <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upcoming">Agendadas ({upcomingAppointments.length})</TabsTrigger>
             <TabsTrigger value="past">Realizadas ({pastAppointments.length})</TabsTrigger>
+            <TabsTrigger value="canceled">Canceladas ({canceledAppointments.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-4 mt-4">
@@ -120,7 +145,7 @@ export default function Appointments() {
             ) : upcomingAppointments.length === 0 ? (
               <Card className="shadow-soft border-border">
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhuma consulta agendada
+                  Nenhum encontro agendado
                 </CardContent>
               </Card>
             ) : (
@@ -155,6 +180,22 @@ export default function Appointments() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
+                        onClick={() => handleComplete(appointment.id)}
+                      >
+                        Concluída
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleReschedule(appointment.id)}
+                      >
+                        Reagendar
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
                         onClick={() => setCancelDialog({ open: true, id: appointment.id })}
                       >
                         Cancelar
@@ -170,7 +211,7 @@ export default function Appointments() {
             {pastAppointments.length === 0 ? (
               <Card className="shadow-soft border-border">
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhuma consulta realizada
+                  Nenhum encontro realizado
                 </CardContent>
               </Card>
             ) : (
@@ -186,9 +227,42 @@ export default function Appointments() {
                           {appointment.professionals.specialty}
                         </Badge>
                       </div>
-                      <Badge variant="outline">
-                        {appointment.status === 'concluída' ? 'Realizada' : 'Cancelada'}
-                      </Badge>
+                      <Badge className="bg-accent text-accent-foreground">Realizado</Badge>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(appointment.date).toLocaleDateString("pt-BR")}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="canceled" className="space-y-4 mt-4">
+            {canceledAppointments.length === 0 ? (
+              <Card className="shadow-soft border-border">
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  Nenhum encontro cancelado
+                </CardContent>
+              </Card>
+            ) : (
+              canceledAppointments.map((appointment) => (
+                <Card key={appointment.id} className="shadow-soft border-border">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {appointment.professionals.name}
+                        </h3>
+                        <Badge variant="secondary" className="mt-1">
+                          {appointment.professionals.specialty}
+                        </Badge>
+                      </div>
+                      <Badge variant="destructive">Cancelado</Badge>
                     </div>
 
                     <div className="space-y-2 text-sm text-muted-foreground">
@@ -208,13 +282,13 @@ export default function Appointments() {
       <AlertDialog open={cancelDialog.open} onOpenChange={(open) => setCancelDialog({ open, id: null })}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Consulta</AlertDialogTitle>
+            <AlertDialogTitle>Cancelar Encontro</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja cancelar esta consulta? Esta ação não pode ser desfeita.
+              Tem certeza que deseja cancelar este encontro? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Não, manter consulta</AlertDialogCancel>
+            <AlertDialogCancel>Não, manter encontro</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancel}>Sim, cancelar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

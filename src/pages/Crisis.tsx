@@ -2,7 +2,9 @@ import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Phone, Wind, Headphones, Heart, Clock } from "lucide-react";
+import { AlertCircle, Phone, Heart, Clock } from "lucide-react";
+import { BreathingExercise } from "@/components/Crisis/BreathingExercise";
+import { RelaxationAudio } from "@/components/Crisis/RelaxationAudio";
 
 const emergencyContacts = [
   { name: "SAMU", number: "192", description: "Emergência médica" },
@@ -10,26 +12,6 @@ const emergencyContacts = [
   { name: "Dr. Emergência", number: "(11) 98765-4321", description: "Seu médico de referência" },
 ];
 
-const quickReliefTechniques = [
-  {
-    icon: Wind,
-    title: "Respiração Profunda",
-    description: "Inspire por 4 segundos, segure por 4, expire por 6. Repita 5 vezes.",
-    action: "Começar Exercício",
-  },
-  {
-    icon: Headphones,
-    title: "Meditação Guiada",
-    description: "Audio de 5 minutos para relaxamento e alívio da dor.",
-    action: "Ouvir Áudio",
-  },
-  {
-    icon: Heart,
-    title: "Posições de Alívio",
-    description: "Posições que podem ajudar a reduzir o desconforto pélvico.",
-    action: "Ver Posições",
-  },
-];
 
 export default function Crisis() {
   return (
@@ -88,41 +70,11 @@ export default function Crisis() {
           </CardContent>
         </Card>
 
-        {/* Quick Relief Techniques */}
-        <Card className="shadow-soft border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-accent" />
-              Técnicas de Alívio Rápido
-            </CardTitle>
-            <CardDescription>Práticas que podem ajudar agora</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {quickReliefTechniques.map((technique, index) => {
-              const Icon = technique.icon;
-              return (
-                <div key={index} className="p-4 rounded-lg bg-gradient-wellness">
-                  <div className="flex items-start gap-4 mb-3">
-                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shrink-0">
-                      <Icon className="w-6 h-6 text-accent" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-accent-foreground mb-1">
-                        {technique.title}
-                      </h3>
-                      <p className="text-sm text-accent-foreground/80">
-                        {technique.description}
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="secondary" size="sm" className="w-full">
-                    {technique.action}
-                  </Button>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+        {/* Breathing Exercise */}
+        <BreathingExercise />
+
+        {/* Relaxation Audio */}
+        <RelaxationAudio />
 
         {/* Pain Log Quick Access */}
         <Card className="shadow-soft border-border">
