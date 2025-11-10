@@ -1,13 +1,151 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNav } from "@/components/Layout/BottomNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Share2, TrendingUp, TrendingDown, Calendar, Heart, Pill, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { format, subMonths, differenceInDays } from "date-fns";
 
 export default function Reports() {
   const [selectedPeriod, setSelectedPeriod] = useState("1");
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    avgCycleDays: 0,
+    totalSymptoms: 0,
+    activeMedications: 0,
+    painReduction: 0,
+    lastCycleDate: null as string | null,
+    nextCycleDate: null as string | null,
+    avgMenstruationDays: 0,
+  });
+  const [symptomTrends, setSymptomTrends] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+      fetchSymptomTrends();
+    }
+  }, [user, selectedPeriod]);
+
+  const fetchStats = async () => {
+    if (!user) return;
+
+    const monthsAgo = parseInt(selectedPeriod);
+    const startDate = subMonths(new Date(), monthsAgo);
+
+    // Buscar ciclos menstruais
+    const { data: cycles } = await (supabase as any)
+      .from("menstruation_cycles")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("date", startDate.toISOString())
+      .order("date", { ascending: true });
+
+    // Buscar sintomas
+    const { data: symptoms } = await (supabase as any)
+      .from("symptoms")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("date", startDate.toISOString());
+
+    // Buscar medicamentos ativos
+    const { data: medications } = await (supabase as any)
+      .from("medications")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("active", true);
+
+    // Calcular estatísticas
+    let avgCycleDays = 28; // default
+    let lastCycleDate = null;
+    let avgMenstruationDays = 5; // default
+
+    if (cycles && cycles.length > 1) {
+      const cycleDurations: number[] = [];
+      for (let i = 1; i < cycles.length; i++) {
+        const diff = differenceInDays(
+          new Date(cycles[i].date),
+          new Date(cycles[i - 1].date)
+        );
+        cycleDurations.push(diff);
+      }
+      if (cycleDurations.length > 0) {
+        avgCycleDays = Math.round(
+          cycleDurations.reduce((a, b) => a + b, 0) / cycleDurations.length
+        );
+      }
+      lastCycleDate = cycles[cycles.length - 1].date;
+    }
+
+    // Calcular próximo ciclo
+    let nextCycleDate = null;
+    if (lastCycleDate) {
+      const nextDate = new Date(lastCycleDate);
+      nextDate.setDate(nextDate.getDate() + avgCycleDays);
+      nextCycleDate = nextDate.toISOString().split("T")[0];
+    }
+
+    // Calcular redução da dor (comparando intensidade média dos sintomas)
+    let painReduction = 0;
+    if (symptoms && symptoms.length > 4) {
+      const halfPoint = Math.floor(symptoms.length / 2);
+      const firstHalf = symptoms.slice(0, halfPoint);
+      const secondHalf = symptoms.slice(halfPoint);
+      
+      const avgFirst = firstHalf.reduce((sum: number, s: any) => sum + s.intensity, 0) / firstHalf.length;
+      const avgSecond = secondHalf.reduce((sum: number, s: any) => sum + s.intensity, 0) / secondHalf.length;
+      
+      painReduction = Math.round(((avgFirst - avgSecond) / avgFirst) * 100);
+    }
+
+    setStats({
+      avgCycleDays,
+      totalSymptoms: symptoms?.length || 0,
+      activeMedications: medications?.length || 0,
+      painReduction,
+      lastCycleDate,
+      nextCycleDate,
+      avgMenstruationDays,
+    });
+  };
+
+  const fetchSymptomTrends = async () => {
+    if (!user) return;
+
+    const { data: symptoms } = await (supabase as any)
+      .from("symptoms")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("date", subMonths(new Date(), 1).toISOString());
+
+    if (!symptoms) return;
+
+    // Agrupar sintomas por nome
+    const grouped = symptoms.reduce((acc: any, symptom: any) => {
+      if (!acc[symptom.symptom_name]) {
+        acc[symptom.symptom_name] = { count: 0, totalIntensity: 0 };
+      }
+      acc[symptom.symptom_name].count++;
+      acc[symptom.symptom_name].totalIntensity += symptom.intensity;
+      return acc;
+    }, {});
+
+    // Converter para array e ordenar
+    const trends = Object.entries(grouped)
+      .map(([name, data]: [string, any]) => ({
+        name,
+        count: data.count,
+        avgIntensity: data.totalIntensity / data.count,
+        percentage: (data.count / symptoms.length) * 100,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    setSymptomTrends(trends);
+  };
 
   const handleDownloadReport = () => {
     toast.success(`Relatório dos últimos ${selectedPeriod === "1" ? "1 mês" : selectedPeriod === "3" ? "3 meses" : "6 meses"} baixado com sucesso!`);
@@ -68,29 +206,35 @@ export default function Reports() {
           <Card className="shadow-soft border-border">
             <CardContent className="pt-6 text-center">
               <Calendar className="w-8 h-8 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground mb-1">28</p>
+              <p className="text-2xl font-bold text-foreground mb-1">{stats.avgCycleDays}</p>
               <p className="text-xs text-muted-foreground">Dias de ciclo médio</p>
             </CardContent>
           </Card>
           <Card className="shadow-soft border-border">
             <CardContent className="pt-6 text-center">
               <Heart className="w-8 h-8 text-destructive mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground mb-1">47</p>
+              <p className="text-2xl font-bold text-foreground mb-1">{stats.totalSymptoms}</p>
               <p className="text-xs text-muted-foreground">Sintomas registrados</p>
             </CardContent>
           </Card>
           <Card className="shadow-soft border-border">
             <CardContent className="pt-6 text-center">
               <Pill className="w-8 h-8 text-accent mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground mb-1">3</p>
+              <p className="text-2xl font-bold text-foreground mb-1">{stats.activeMedications}</p>
               <p className="text-xs text-muted-foreground">Medicamentos ativos</p>
             </CardContent>
           </Card>
           <Card className="shadow-soft border-border">
             <CardContent className="pt-6 text-center">
-              <TrendingDown className="w-8 h-8 text-accent mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground mb-1">-15%</p>
-              <p className="text-xs text-muted-foreground">Redução da dor</p>
+              {stats.painReduction >= 0 ? (
+                <TrendingDown className="w-8 h-8 text-accent mx-auto mb-2" />
+              ) : (
+                <TrendingUp className="w-8 h-8 text-destructive mx-auto mb-2" />
+              )}
+              <p className="text-2xl font-bold text-foreground mb-1">
+                {stats.painReduction > 0 ? `-${stats.painReduction}%` : `${Math.abs(stats.painReduction)}%`}
+              </p>
+              <p className="text-xs text-muted-foreground">Variação da dor</p>
             </CardContent>
           </Card>
         </div>
@@ -102,46 +246,38 @@ export default function Reports() {
             <CardDescription>Últimos 30 dias</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">Dor Pélvica</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">18 registros</span>
-                    <TrendingDown className="w-4 h-4 text-accent" />
+            {symptomTrends.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum sintoma registrado no período
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {symptomTrends.map((trend, index) => (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-foreground">{trend.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">{trend.count} registros</span>
+                        {trend.avgIntensity > 5 ? (
+                          <TrendingUp className="w-4 h-4 text-destructive" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4 text-accent" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${trend.percentage}%`,
+                          backgroundColor: `hsl(${trend.avgIntensity > 7 ? '0 70% 70%' : trend.avgIntensity > 4 ? '340 60% 70%' : '150 45% 75%'})`,
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-destructive rounded-full" style={{ width: "75%" }} />
-                </div>
+                ))}
               </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">Fadiga</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">12 registros</span>
-                    <TrendingUp className="w-4 h-4 text-destructive" />
-                  </div>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-secondary-dark rounded-full" style={{ width: "50%" }} />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">Cólicas</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">9 registros</span>
-                    <TrendingDown className="w-4 h-4 text-accent" />
-                  </div>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: "38%" }} />
-                </div>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -153,19 +289,27 @@ export default function Reports() {
           <CardContent className="text-white space-y-2">
             <div className="flex justify-between items-center py-2 border-b border-white/20">
               <span className="text-sm">Duração média do ciclo</span>
-              <span className="font-semibold">28 dias</span>
+              <span className="font-semibold">{stats.avgCycleDays} dias</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-white/20">
               <span className="text-sm">Duração da menstruação</span>
-              <span className="font-semibold">5 dias</span>
+              <span className="font-semibold">{stats.avgMenstruationDays} dias</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-white/20">
               <span className="text-sm">Último ciclo</span>
-              <span className="font-semibold">10 Nov 2024</span>
+              <span className="font-semibold">
+                {stats.lastCycleDate
+                  ? format(new Date(stats.lastCycleDate), "dd MMM yyyy")
+                  : "Não registrado"}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-sm">Próximo previsto</span>
-              <span className="font-semibold">24 Nov 2024</span>
+              <span className="font-semibold">
+                {stats.nextCycleDate
+                  ? format(new Date(stats.nextCycleDate), "dd MMM yyyy")
+                  : "Não disponível"}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -176,22 +320,46 @@ export default function Reports() {
             <CardTitle className="text-lg">Insights Personalizados</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="p-3 rounded-lg bg-accent-soft">
-              <p className="text-sm font-medium text-accent-foreground mb-1">
-                ✓ Boa notícia!
-              </p>
-              <p className="text-xs text-accent-foreground/80">
-                Seus registros mostram uma redução de 15% na intensidade da dor nas últimas duas semanas.
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-secondary">
-              <p className="text-sm font-medium text-secondary-foreground mb-1">
-                ℹ️ Observação
-              </p>
-              <p className="text-xs text-secondary-foreground/80">
-                A fadiga tem sido mais frequente. Considere discutir isso com seu médico.
-              </p>
-            </div>
+            {stats.painReduction > 10 && (
+              <div className="p-3 rounded-lg bg-accent-soft">
+                <p className="text-sm font-medium text-accent-foreground mb-1">
+                  ✓ Boa notícia!
+                </p>
+                <p className="text-xs text-accent-foreground/80">
+                  Seus registros mostram uma redução de {stats.painReduction}% na intensidade da dor no período selecionado.
+                </p>
+              </div>
+            )}
+            {stats.painReduction < -10 && (
+              <div className="p-3 rounded-lg bg-destructive/10">
+                <p className="text-sm font-medium text-destructive mb-1">
+                  ⚠️ Atenção
+                </p>
+                <p className="text-xs text-destructive/80">
+                  A intensidade da dor aumentou {Math.abs(stats.painReduction)}%. Considere discutir isso com seu médico.
+                </p>
+              </div>
+            )}
+            {symptomTrends.length > 0 && symptomTrends[0].count > 10 && (
+              <div className="p-3 rounded-lg bg-secondary">
+                <p className="text-sm font-medium text-secondary-foreground mb-1">
+                  ℹ️ Observação
+                </p>
+                <p className="text-xs text-secondary-foreground/80">
+                  "{symptomTrends[0].name}" é o sintoma mais frequente ({symptomTrends[0].count} registros). Considere discutir isso com seu médico.
+                </p>
+              </div>
+            )}
+            {stats.totalSymptoms === 0 && (
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-sm font-medium text-foreground mb-1">
+                  💡 Dica
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Registre seus sintomas regularmente para obter insights mais precisos sobre sua saúde.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

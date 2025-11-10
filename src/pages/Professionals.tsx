@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Star, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProfessionalDetailModal } from "@/components/Professional/ProfessionalDetailModal";
 import { BookingModal } from "@/components/Professional/BookingModal";
@@ -27,7 +27,7 @@ export default function Professionals() {
   }, []);
 
   const fetchProfessionals = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("professionals")
       .select("*")
       .order("name");
@@ -102,13 +102,10 @@ export default function Professionals() {
                       {prof.specialty}
                     </Badge>
                     
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-                      {prof.price && (
-                        <span className="font-medium text-primary">
-                          R$ {prof.price.toFixed(2).replace('.', ',')}
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                      {prof.phone && `Tel: ${prof.phone}`}
+                      {prof.email && ` • ${prof.email}`}
+                    </p>
                   </div>
                 </div>
 
@@ -119,7 +116,7 @@ export default function Professionals() {
                     className="flex-1"
                     onClick={() => handleScheduleClick(prof)}
                   >
-                    Agendar Consulta
+                    Agendar Encontro
                   </Button>
                   <Button 
                     variant="outline" 
