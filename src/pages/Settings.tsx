@@ -21,7 +21,7 @@ export default function Settings() {
     articles: true,
   });
   const [companionMode, setCompanionMode] = useState(false);
-  const [userData, setUserData] = useState({ name: "", email: "" });
+  const [userData, setUserData] = useState({ name: "", email: "", avatar_url: "" });
 
   useEffect(() => {
     loadProfile();
@@ -31,7 +31,7 @@ export default function Settings() {
     if (!user) return;
     const { data: profile } = await supabase
       .from('profiles')
-      .select('name, email')
+      .select('name, email, avatar_url')
       .eq('id', user.id)
       .maybeSingle();
     
@@ -39,6 +39,7 @@ export default function Settings() {
       setUserData({
         name: profile.name || "",
         email: profile.email || "",
+        avatar_url: profile.avatar_url || "",
       });
     }
   };
@@ -65,8 +66,16 @@ export default function Settings() {
               onClick={() => navigate("/profile")}
               className="flex items-center gap-4 mb-4 cursor-pointer hover:bg-muted rounded-lg p-2 -m-2 transition-colors"
             >
-              <div className="w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center">
-                <User className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center overflow-hidden">
+                {userData.avatar_url ? (
+                  <img 
+                    src={userData.avatar_url} 
+                    alt="Foto de perfil" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-8 h-8 text-white" />
+                )}
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-foreground text-lg">

@@ -29,8 +29,8 @@ export const WeekCalendar = ({ selectedDate = new Date(), onDateClick }: WeekCal
               !isToday && !isSelected && "hover:bg-muted"
             )}
           >
-            <span className="text-xs font-medium">
-              {format(day, "EEE", { locale: ptBR })}
+            <span className="text-xs font-medium uppercase">
+              {format(day, "EEE", { locale: ptBR }).slice(0, 3)}
             </span>
             <span className={cn(
               "text-lg font-semibold",

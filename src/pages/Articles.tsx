@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
-const categories = ["Todos", "Sintomas", "Tratamentos", "Alimentação", "Bem-estar"];
+const categories = ["Todos", "Favoritos", "Sintomas", "Tratamentos", "Alimentação", "Bem-estar"];
 
 interface Article {
   id: string;
@@ -114,6 +114,11 @@ export default function Articles() {
   };
 
   const filteredArticles = articles.filter(article => {
+    if (selectedCategory === "Favoritos") {
+      return savedArticleIds.has(article.id) && 
+             (article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              article.excerpt.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
     const matchesCategory = selectedCategory === "Todos" || article.category === selectedCategory;
     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          article.excerpt.toLowerCase().includes(searchTerm.toLowerCase());

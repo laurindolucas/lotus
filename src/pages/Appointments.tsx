@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { RescheduleModal } from "@/components/Professional/RescheduleModal";
 
 interface Appointment {
   id: string;
@@ -27,6 +28,7 @@ interface Appointment {
   time: string;
   status: string;
   professionals: {
+    id: string;
     name: string;
     specialty: string;
   };
@@ -37,6 +39,7 @@ export default function Appointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelDialog, setCancelDialog] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
+  const [rescheduleDialog, setRescheduleDialog] = useState<{ open: boolean; appointment: Appointment | null }>({ open: false, appointment: null });
 
   useEffect(() => {
     checkAuth();
@@ -107,10 +110,8 @@ export default function Appointments() {
     }
   };
 
-  const handleReschedule = (id: string) => {
-    // Navegar para a página de profissionais para reagendar
-    navigate('/professionals');
-    toast.info('Selecione um novo horário');
+  const handleReschedule = (appointment: Appointment) => {
+    setRescheduleDialog({ open: true, appointment });
   };
 
   const upcomingAppointments = appointments.filter(a => a.status === 'agendada');
@@ -188,7 +189,7 @@ export default function Appointments() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => handleReschedule(appointment.id)}
+                        onClick={() => handleReschedule(appointment)}
                       >
                         Reagendar
                       </Button>
@@ -293,6 +294,13 @@ export default function Appointments() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <RescheduleModal
+        appointment={rescheduleDialog.appointment}
+        isOpen={rescheduleDialog.open}
+        onClose={() => setRescheduleDialog({ open: false, appointment: null })}
+        onSuccess={loadAppointments}
+      />
 
       <BottomNav />
     </div>

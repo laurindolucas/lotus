@@ -11,6 +11,8 @@ import { format, subMonths, differenceInDays } from "date-fns";
 
 export default function Reports() {
   const [selectedPeriod, setSelectedPeriod] = useState("1");
+  const [historyFilter, setHistoryFilter] = useState<"week" | "month">("week");
+  const [activityHistory, setActivityHistory] = useState<any[]>([]);
   const { user } = useAuth();
   const [stats, setStats] = useState({
     avgCycleDays: 0,
@@ -27,8 +29,9 @@ export default function Reports() {
     if (user) {
       fetchStats();
       fetchSymptomTrends();
+      fetchActivityHistory();
     }
-  }, [user, selectedPeriod]);
+  }, [user, selectedPeriod, historyFilter]);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -145,6 +148,74 @@ export default function Reports() {
       .slice(0, 5);
 
     setSymptomTrends(trends);
+  };
+
+  const fetchActivityHistory = async () => {
+    if (!user) return;
+
+    const daysAgo = historyFilter === "week" ? 7 : 30;
+    const startDate = subMonths(new Date(), 0);
+    startDate.setDate(startDate.getDate() - daysAgo);
+
+    const activities: any[] = [];
+
+    // Buscar sintomas
+    const { data: symptoms } = await (supabase as any)
+      .from("symptoms")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("date", startDate.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (symptoms) {
+      symptoms.forEach((symptom: any) => {
+        activities.push({
+          type: "symptom",
+          date: symptom.created_at,
+          description: `${symptom.symptom_name} • Intensidade ${symptom.intensity}/10`,
+        });
+      });
+    }
+
+    // Buscar menstruação
+    const { data: cycles } = await (supabase as any)
+      .from("menstruation_cycles")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("date", startDate.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (cycles) {
+      cycles.forEach((cycle: any) => {
+        activities.push({
+          type: "menstruation",
+          date: cycle.created_at,
+          description: `Menstruação registrada${cycle.flow_intensity ? ` • Fluxo: ${cycle.flow_intensity}` : ''}`,
+        });
+      });
+    }
+
+    // Buscar medicamentos
+    const { data: medLogs } = await (supabase as any)
+      .from("medication_logs")
+      .select("*, medications(name)")
+      .eq("user_id", user.id)
+      .gte("created_at", startDate.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (medLogs) {
+      medLogs.forEach((log: any) => {
+        activities.push({
+          type: "medication",
+          date: log.created_at,
+          description: `Medicamento: ${log.medications?.name}`,
+        });
+      });
+    }
+
+    // Ordenar por data
+    activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    setActivityHistory(activities);
   };
 
   const handleDownloadReport = () => {
@@ -358,6 +429,72 @@ export default function Reports() {
                 <p className="text-xs text-muted-foreground">
                   Registre seus sintomas regularmente para obter insights mais precisos sobre sua saúde.
                 </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Activity History */}
+        <Card className="shadow-soft border-border">
+          <CardHeader>
+            <CardTitle className="text-lg">Histórico de Atividades</CardTitle>
+            <div className="flex gap-2 mt-3">
+              <Button
+                size="sm"
+                variant={historyFilter === "week" ? "default" : "outline"}
+                onClick={() => setHistoryFilter("week")}
+              >
+                Semana
+              </Button>
+              <Button
+                size="sm"
+                variant={historyFilter === "month" ? "default" : "outline"}
+                onClick={() => setHistoryFilter("month")}
+              >
+                Mês
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {activityHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma atividade no período selecionado
+              </p>
+            ) : (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {activityHistory.map((activity, index) => {
+                  const activityDate = new Date(activity.date);
+                  const formattedDate = format(activityDate, "d 'de' MMM 'às' HH:mm");
+                  
+                  const iconColors = {
+                    symptom: "bg-secondary-dark",
+                    medication: "bg-accent",
+                    menstruation: "bg-primary",
+                    appointment: "bg-destructive",
+                  };
+                  
+                  const labels = {
+                    symptom: "Sintoma",
+                    medication: "Medicamento",
+                    menstruation: "Menstruação",
+                    appointment: "Consulta",
+                  };
+                  
+                  return (
+                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted">
+                      <div className={`w-2 h-2 rounded-full ${iconColors[activity.type as keyof typeof iconColors]} mt-2`} />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{labels[activity.type as keyof typeof labels]}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formattedDate}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

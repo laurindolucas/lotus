@@ -7,17 +7,21 @@ import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "@/hooks/useAuth";
 
-interface Professional {
+interface Appointment {
   id: string;
-  name: string;
-  specialty: string;
-  available_times?: any;
+  professional_id: string;
+  date: string;
+  time: string;
+  professionals: {
+    id: string;
+    name: string;
+    specialty: string;
+  };
 }
 
-interface BookingModalProps {
-  professional: Professional | null;
+interface RescheduleModalProps {
+  appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -29,46 +33,44 @@ const availableTimeSlots = [
   "16:00", "16:30", "17:00", "17:30"
 ];
 
-export function BookingModal({ 
-  professional, 
+export function RescheduleModal({ 
+  appointment, 
   isOpen, 
   onClose, 
   onSuccess 
-}: BookingModalProps) {
-  const { user } = useAuth();
+}: RescheduleModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
     if (!selectedDate || !selectedTime) {
-      toast.error("Selecione uma data e horário");
+      toast.error("Selecione uma nova data e horário");
       return;
     }
 
-    if (!user || !professional) return;
+    if (!appointment) return;
 
     setLoading(true);
     try {
       const { error } = await supabase
         .from("appointments")
-        .insert({
-          user_id: user.id,
-          professional_id: professional.id,
+        .update({
           date: format(selectedDate, "yyyy-MM-dd"),
           time: selectedTime,
           status: "agendada",
-        });
+        })
+        .eq("id", appointment.id);
 
       if (error) throw error;
 
-      toast.success("Consulta agendada com sucesso!");
+      toast.success("Consulta reagendada com sucesso!");
       onSuccess();
       onClose();
       resetForm();
     } catch (error) {
-      console.error("Error booking appointment:", error);
-      toast.error("Erro ao agendar consulta");
+      console.error("Error rescheduling appointment:", error);
+      toast.error("Erro ao reagendar consulta");
     } finally {
       setLoading(false);
     }
@@ -84,24 +86,27 @@ export function BookingModal({
     onClose();
   };
 
-  if (!professional) return null;
+  if (!appointment) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Agendar Consulta</DialogTitle>
+          <DialogTitle>Reagendar Consulta</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
           <div className="text-center pb-4 border-b border-border">
-            <h3 className="font-semibold">{professional.name}</h3>
-            <p className="text-sm text-muted-foreground">{professional.specialty}</p>
+            <h3 className="font-semibold">{appointment.professionals.name}</h3>
+            <p className="text-sm text-muted-foreground">{appointment.professionals.specialty}</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Agendamento atual: {new Date(appointment.date).toLocaleDateString('pt-BR')} às {appointment.time}
+            </p>
           </div>
 
           {/* Date Selection */}
           <div className="space-y-2">
-            <Label className="text-center block">Selecione a Data</Label>
+            <Label className="text-center block">Selecione a Nova Data</Label>
             <div className="flex justify-center">
               <Calendar
                 mode="single"
@@ -117,7 +122,7 @@ export function BookingModal({
           {/* Time Selection */}
           {selectedDate && (
             <div className="space-y-2 animate-fade-in">
-              <Label>Selecione o Horário</Label>
+              <Label>Selecione o Novo Horário</Label>
               <div className="grid grid-cols-3 gap-2">
                 {availableTimeSlots.map((time) => (
                   <Button
@@ -137,15 +142,15 @@ export function BookingModal({
           {/* Confirmation */}
           {selectedDate && selectedTime && (
             <div className="p-4 bg-primary-light/20 rounded-lg animate-scale-in">
-              <h4 className="font-semibold text-sm mb-2">Confirmar Agendamento</h4>
+              <h4 className="font-semibold text-sm mb-2">Confirmar Reagendamento</h4>
               <p className="text-sm text-muted-foreground">
-                <strong>Data:</strong> {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                <strong>Nova Data:</strong> {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
               <p className="text-sm text-muted-foreground">
-                <strong>Horário:</strong> {selectedTime}
+                <strong>Novo Horário:</strong> {selectedTime}
               </p>
               <p className="text-sm text-muted-foreground">
-                <strong>Profissional:</strong> {professional.name}
+                <strong>Profissional:</strong> {appointment.professionals.name}
               </p>
             </div>
           )}
@@ -160,7 +165,7 @@ export function BookingModal({
               className="flex-1" 
               disabled={!selectedDate || !selectedTime || loading}
             >
-              {loading ? "Agendando..." : "Confirmar"}
+              {loading ? "Reagendando..." : "Confirmar Reagendamento"}
             </Button>
           </div>
         </div>
