@@ -37,7 +37,9 @@ export const Header = ({
             </Button>
           )}
           {logo ? (
-            <img src={logo} alt={title} className="h-12 object-contain" />
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-sm">
+              <img src={logo} alt={title} className="h-10 object-contain" />
+            </div>
           ) : (
             <h1 className="text-xl font-semibold text-foreground truncate">{title}</h1>
           )}
