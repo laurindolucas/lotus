@@ -9,6 +9,7 @@ interface HeaderProps {
   showSettings?: boolean;
   showNotifications?: boolean;
   className?: string;
+  logo?: string;
 }
 
 export const Header = ({ 
@@ -16,7 +17,8 @@ export const Header = ({
   showBack = false, 
   showSettings = false,
   showNotifications = false,
-  className 
+  className,
+  logo
 }: HeaderProps) => {
   const navigate = useNavigate();
 
@@ -34,7 +36,11 @@ export const Header = ({
               <ArrowLeft className="w-5 h-5" />
             </Button>
           )}
-          <h1 className="text-xl font-semibold text-foreground truncate">{title}</h1>
+          {logo ? (
+            <img src={logo} alt={title} className="h-8 object-contain" />
+          ) : (
+            <h1 className="text-xl font-semibold text-foreground truncate">{title}</h1>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
