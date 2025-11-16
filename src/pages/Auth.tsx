@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, User, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import lotusLogo from "@/assets/lotus-logo.png";
+import lotusLogo from "@/assets/lotus-logo-vertical.png";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Auth() {
@@ -83,8 +83,8 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-gradient-calm flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 animate-fade-in">
-        <div className="w-32 h-32 mb-6 rounded-full bg-white shadow-glow p-4 flex items-center justify-center">
-          <img src={lotusLogo} alt="LOTUS Logo" className="w-full h-full object-contain" />
+        <div className="w-48 h-48 mb-6 rounded-full bg-white shadow-glow p-6 flex items-center justify-center">
+          <img src={lotusLogo} alt="LOTUS Logo" className="w-full h-full object-contain rounded-full" />
         </div>
 
         <h1 className="text-3xl font-bold text-center mb-2 text-foreground">

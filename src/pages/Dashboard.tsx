@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, differenceInDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import lotusLogoHorizontal from "@/assets/lotus-logo-header.jpg";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -188,7 +189,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-calm pb-24">
-      <Header title="Lotus" showNotifications showSettings />
+      <Header title="Lotus" showNotifications showSettings logo={lotusLogoHorizontal} />
       
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
         {/* Greeting */}
