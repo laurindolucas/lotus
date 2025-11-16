@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import lotusLogo from "@/assets/lotus-logo.png";
+import lotusLogo from "@/assets/lotus-logo-vertical.png";
 
 const Index = () => {
   const navigate = useNavigate();
