@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, differenceInDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import lotusLogoHorizontal from "@/assets/lotus-logo-horizontal.jpg";
+import lotusLogoHorizontal from "@/assets/lotus-logo-header.jpg";
 
 export default function Dashboard() {
   const navigate = useNavigate();
