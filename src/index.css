@@ -138,3 +138,11 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Lotus header styling */
+.lotus-header h1 {
+  font-family: 'Righteous', cursive;
+  color: #9428b3;
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+}
