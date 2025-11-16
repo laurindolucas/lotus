@@ -37,7 +37,7 @@ export const Header = ({
             </Button>
           )}
           {logo ? (
-            <img src={logo} alt={title} className="h-8 object-contain" />
+            <img src={logo} alt={title} className="h-12 object-contain" />
           ) : (
             <h1 className="text-xl font-semibold text-foreground truncate">{title}</h1>
           )}
